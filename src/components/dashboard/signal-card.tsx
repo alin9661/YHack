@@ -18,9 +18,10 @@ interface SignalCardProps {
 const DIRECTION_CONFIG = {
   bullish: {
     icon: "↗",
-    color: "text-emerald-400",
-    bg: "bg-emerald-400/10",
-    border: "border-emerald-400/20",
+    color: "text-oracle-gold",
+    bg: "bg-oracle-gold/10",
+    border: "border-oracle-gold-dim/20",
+    bar: "bg-oracle-gold",
     label: "BULLISH",
   },
   bearish: {
@@ -28,13 +29,15 @@ const DIRECTION_CONFIG = {
     color: "text-red-400",
     bg: "bg-red-400/10",
     border: "border-red-400/20",
+    bar: "bg-red-500",
     label: "BEARISH",
   },
   neutral: {
     icon: "→",
-    color: "text-amber-400",
-    bg: "bg-amber-400/10",
-    border: "border-amber-400/20",
+    color: "text-oracle-amber",
+    bg: "bg-oracle-amber/10",
+    border: "border-oracle-amber/20",
+    bar: "bg-oracle-amber",
     label: "NEUTRAL",
   },
 };
@@ -43,10 +46,10 @@ export function SignalCard({ signal }: SignalCardProps) {
   const config = DIRECTION_CONFIG[signal.direction] || DIRECTION_CONFIG.neutral;
 
   return (
-    <Card className={`bg-zinc-900/50 border-zinc-800 overflow-hidden`}>
+    <Card className="bg-oracle-deep/60 border-oracle-surface-light/40 overflow-hidden">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium text-zinc-100 leading-tight max-w-[70%]">
+          <CardTitle className="text-sm font-display text-oracle-text leading-tight max-w-[70%]">
             {signal.market_title}
           </CardTitle>
           <Badge className={`${config.bg} ${config.color} ${config.border} text-[10px] font-mono`}>
@@ -58,27 +61,21 @@ export function SignalCard({ signal }: SignalCardProps) {
         {/* Confidence bar */}
         <div>
           <div className="flex justify-between text-xs mb-1">
-            <span className="text-zinc-400">Confidence</span>
+            <span className="text-oracle-text-dim">Confidence</span>
             <span className={`font-mono ${config.color}`}>
               {signal.confidence}%
             </span>
           </div>
-          <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="h-2 bg-oracle-surface rounded-full overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all ${
-                signal.direction === "bullish"
-                  ? "bg-emerald-500"
-                  : signal.direction === "bearish"
-                    ? "bg-red-500"
-                    : "bg-amber-500"
-              }`}
+              className={`h-full rounded-full transition-all ${config.bar}`}
               style={{ width: `${Math.min(signal.confidence, 100)}%` }}
             />
           </div>
         </div>
 
         {/* Reasoning */}
-        <p className="text-xs text-zinc-400 leading-relaxed">
+        <p className="text-xs text-oracle-text-dim leading-relaxed">
           {signal.reasoning}
         </p>
 
@@ -89,7 +86,7 @@ export function SignalCard({ signal }: SignalCardProps) {
               <Badge
                 key={i}
                 variant="outline"
-                className="text-[10px] text-zinc-400 border-zinc-700"
+                className="text-[10px] text-oracle-text-dim border-oracle-surface-light/60 font-mono"
               >
                 {factor}
               </Badge>
@@ -99,7 +96,7 @@ export function SignalCard({ signal }: SignalCardProps) {
 
         {/* Timestamp */}
         {signal.generated_at && (
-          <p className="text-[10px] text-zinc-600 pt-1 border-t border-zinc-800/50">
+          <p className="font-mono text-[10px] text-oracle-text-dim/40 pt-1 border-t border-oracle-surface-light/30">
             Generated {new Date(signal.generated_at).toLocaleString()}
           </p>
         )}

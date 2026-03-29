@@ -4,13 +4,20 @@ import { useRef, useEffect, useCallback } from "react";
 import type { ChatMessage } from "@/types";
 import { MessageBubble } from "./message-bubble";
 import { ChatInput } from "./chat-input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { OracleSymbol } from "@/components/OracleSymbol";
 
 interface ChatPanelProps {
   messages: ChatMessage[];
   isLoading: boolean;
   onSubmit: (message: string) => void;
 }
+
+const suggestions = [
+  { icon: "\u25C8", text: "What are the top AI prediction markets?" },
+  { icon: "\u25C7", text: "Analyze the US election markets" },
+  { icon: "\u25CB", text: "Generate a signal for crypto regulation" },
+  { icon: "\u25B3", text: "Show recent analyses" },
+];
 
 export function ChatPanel({ messages, isLoading, onSubmit }: ChatPanelProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -25,20 +32,34 @@ export function ChatPanel({ messages, isLoading, onSubmit }: ChatPanelProps) {
 
   return (
     <div className="flex flex-col h-full">
-      <ScrollArea className="flex-1 px-4">
+      <div className="flex-1 overflow-y-auto px-4">
         <div className="space-y-4 py-4">
           {messages.length === 0 && (
-            <div className="text-center text-zinc-500 mt-32">
-              <div className="text-4xl mb-4">📊</div>
-              <p className="text-lg font-medium">Prediction Market Intelligence</p>
-              <p className="text-sm mt-2 max-w-sm mx-auto">
-                Ask me to search markets, analyze trends, or generate trading
-                signals from Polymarket data.
+            <div className="flex flex-col items-center justify-center h-full min-h-[60vh] px-6">
+              <div className="animate-float mb-8">
+                <OracleSymbol size={80} className="text-oracle-gold opacity-60" />
+              </div>
+              <h2 className="font-display text-3xl font-light text-oracle-text mb-3">
+                What shall we explore?
+              </h2>
+              <p className="text-oracle-text-dim text-sm mb-12">
+                Search markets, generate signals, or analyze trends.
               </p>
-              <div className="mt-6 space-y-2 text-xs text-zinc-600">
-                <p>&quot;What are the top AI prediction markets?&quot;</p>
-                <p>&quot;Analyze the US election markets&quot;</p>
-                <p>&quot;Generate a signal for crypto regulation&quot;</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg w-full">
+                {suggestions.map((s) => (
+                  <button
+                    key={s.text}
+                    onClick={() => onSubmit(s.text)}
+                    className="text-left border border-oracle-surface-light/50 bg-oracle-deep/30 px-5 py-4 hover:bg-oracle-surface/40 hover:border-oracle-gold-dim/30 transition-all duration-400 group"
+                  >
+                    <span className="text-oracle-gold-dim/60 mr-2 text-sm group-hover:text-oracle-gold transition-colors duration-300">
+                      {s.icon}
+                    </span>
+                    <span className="text-oracle-text-dim text-sm group-hover:text-oracle-text transition-colors duration-300">
+                      {s.text}
+                    </span>
+                  </button>
+                ))}
               </div>
             </div>
           )}
@@ -47,7 +68,7 @@ export function ChatPanel({ messages, isLoading, onSubmit }: ChatPanelProps) {
           ))}
           <div ref={bottomRef} />
         </div>
-      </ScrollArea>
+      </div>
       <ChatInput onSubmit={onSubmit} disabled={isLoading} />
     </div>
   );

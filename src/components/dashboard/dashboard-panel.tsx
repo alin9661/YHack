@@ -3,6 +3,7 @@
 import type { ChatMessage } from "@/types";
 import { MarketCard } from "./market-card";
 import { SignalCard } from "./signal-card";
+import { OracleSymbol } from "@/components/OracleSymbol";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
@@ -77,10 +78,10 @@ export function DashboardPanel({ messages }: DashboardPanelProps) {
   const hasContent = markets.length > 0 || signals.length > 0;
 
   return (
-    <div className="flex flex-col h-full border-l border-zinc-800">
-      <div className="p-4 border-b border-zinc-800">
-        <h2 className="text-sm font-semibold text-zinc-200">Dashboard</h2>
-        <p className="text-xs text-zinc-500 mt-0.5">
+    <div className="flex flex-col h-full border-l border-oracle-surface-light/30">
+      <div className="p-4 border-b border-oracle-surface-light/30">
+        <h2 className="text-sm font-display tracking-wider text-oracle-text">Dashboard</h2>
+        <p className="font-mono text-[10px] tracking-wider text-oracle-text-dim mt-0.5">
           {hasContent
             ? `${markets.length} markets · ${signals.length} signals`
             : "Tool results appear here"}
@@ -90,10 +91,12 @@ export function DashboardPanel({ messages }: DashboardPanelProps) {
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-6">
           {!hasContent && (
-            <div className="text-center text-zinc-600 mt-20">
-              <div className="text-3xl mb-3">🔍</div>
-              <p className="text-xs">
-                Search for markets or generate signals to populate the dashboard
+            <div className="flex flex-col items-center text-center mt-20">
+              <OracleSymbol size={48} className="text-oracle-gold opacity-40 mb-4" />
+              <p className="font-mono text-[10px] tracking-wider text-oracle-text-dim">
+                Search for markets or generate signals
+                <br />
+                to populate the dashboard
               </p>
             </div>
           )}
@@ -101,7 +104,7 @@ export function DashboardPanel({ messages }: DashboardPanelProps) {
           {/* Signals section */}
           {signals.length > 0 && (
             <div>
-              <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">
+              <h3 className="font-mono text-[10px] tracking-[0.25em] text-oracle-text-dim uppercase mb-3">
                 Signals
               </h3>
               <div className="space-y-3">
@@ -113,13 +116,13 @@ export function DashboardPanel({ messages }: DashboardPanelProps) {
           )}
 
           {signals.length > 0 && markets.length > 0 && (
-            <Separator className="bg-zinc-800" />
+            <Separator className="bg-oracle-surface-light/30" />
           )}
 
           {/* Markets section */}
           {markets.length > 0 && (
             <div>
-              <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3">
+              <h3 className="font-mono text-[10px] tracking-[0.25em] text-oracle-text-dim uppercase mb-3">
                 Markets
               </h3>
               <div className="space-y-3">
