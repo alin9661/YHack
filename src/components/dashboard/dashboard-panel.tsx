@@ -4,7 +4,6 @@ import type { ChatMessage } from "@/types";
 import { MarketCard } from "./market-card";
 import { SignalCard } from "./signal-card";
 import { OracleSymbol } from "@/components/OracleSymbol";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 
 interface DashboardPanelProps {
@@ -79,7 +78,8 @@ export function DashboardPanel({ messages }: DashboardPanelProps) {
 
   return (
     <div className="flex flex-col h-full border-l border-oracle-surface-light/30">
-      <div className="p-4 border-b border-oracle-surface-light/30">
+      {/* Fixed header */}
+      <div className="flex-shrink-0 p-4 border-b border-oracle-surface-light/30">
         <h2 className="text-sm font-display tracking-wider text-oracle-text">Dashboard</h2>
         <p className="font-mono text-[10px] tracking-wider text-oracle-text-dim mt-0.5">
           {hasContent
@@ -88,7 +88,8 @@ export function DashboardPanel({ messages }: DashboardPanelProps) {
         </p>
       </div>
 
-      <ScrollArea className="flex-1">
+      {/* Scrollable content */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="p-4 space-y-6">
           {!hasContent && (
             <div className="flex flex-col items-center text-center mt-20">
@@ -133,7 +134,7 @@ export function DashboardPanel({ messages }: DashboardPanelProps) {
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 }
