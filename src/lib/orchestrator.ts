@@ -13,7 +13,7 @@ import { initMCPServers } from "@/lib/mcp-manager";
 const MAX_ITERATIONS = 10;
 let mcpInitialized = false;
 
-const SYSTEM_PROMPT = `You are an AI prediction market analyst powered by Lava Gateway. You help users understand prediction markets, analyze data from Polymarket, and provide actionable insights.
+const SYSTEM_PROMPT = `You are MarketMind, an AI prediction market analyst. You help users understand prediction markets, analyze data from Polymarket, and provide actionable insights.
 
 Available capabilities:
 - Search Polymarket for prediction markets by topic
@@ -128,16 +128,13 @@ export async function* agenticLoop(
           const result = await dispatch(entry, block.input);
 
           // Truncate large results to save tokens (spec §8.2)
-          const resultStr = JSON.stringify(result);
-          const truncated =
-            resultStr.length > 4000
-              ? resultStr.slice(0, 4000) + "...[truncated]"
-              : resultStr;
+          // Truncate the object structurally to keep valid JSON
+          const truncated = truncateResult(result, 4000);
 
           return {
             type: "tool_result" as const,
             tool_use_id: block.id,
-            content: truncated,
+            content: JSON.stringify(truncated),
           };
         } catch (error) {
           console.error(`[orchestrator] tool error (${block.name}):`, error);
@@ -156,10 +153,16 @@ export async function* agenticLoop(
 
     // Yield tool results to the frontend
     for (let i = 0; i < toolUseBlocks.length; i++) {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(toolResults[i].content);
+      } catch {
+        parsed = { error: "Failed to parse tool result" };
+      }
       yield {
         type: "tool_result",
         name: toolUseBlocks[i].name,
-        result: JSON.parse(toolResults[i].content),
+        result: parsed,
       };
     }
 
@@ -182,4 +185,44 @@ export async function* agenticLoop(
     message: `Reached maximum iterations (${MAX_ITERATIONS}). The analysis may be incomplete.`,
   };
   yield { type: "done" };
+}
+
+/**
+ * Structurally truncate a tool result to fit within a character budget.
+ * Unlike string slicing, this preserves valid JSON by trimming arrays
+ * and long string values rather than cutting the serialized output.
+ */
+function truncateResult(data: unknown, maxChars: number): unknown {
+  const str = JSON.stringify(data);
+  if (str.length <= maxChars) return data;
+
+  // For arrays, progressively remove items from the end
+  if (Array.isArray(data)) {
+    const trimmed = [...data];
+    while (trimmed.length > 1 && JSON.stringify(trimmed).length > maxChars) {
+      trimmed.pop();
+    }
+    return trimmed;
+  }
+
+  // For objects, truncate long string values and trim array fields
+  if (data !== null && typeof data === "object") {
+    const obj = data as Record<string, unknown>;
+    const result: Record<string, unknown> = {};
+
+    for (const [key, value] of Object.entries(obj)) {
+      if (typeof value === "string" && value.length > 500) {
+        result[key] = value.slice(0, 500) + "...";
+      } else if (Array.isArray(value)) {
+        result[key] = truncateResult(value, Math.floor(maxChars / 2));
+      } else {
+        result[key] = value;
+      }
+    }
+
+    return result;
+  }
+
+  // Primitives pass through
+  return data;
 }
