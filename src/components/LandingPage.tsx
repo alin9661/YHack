@@ -194,7 +194,7 @@ export default function LandingPage() {
         <div className="flex items-center gap-3">
           <OracleSymbol size={28} className="text-oracle-gold" />
           <span className="font-display text-lg tracking-widest text-oracle-text-dim">
-            POLYLAVA
+            MARKETMIND
           </span>
         </div>
         <div className="flex items-center gap-8">
@@ -231,7 +231,7 @@ export default function LandingPage() {
             textShadow: "0 0 60px rgba(212,168,75,0.25)",
           }}
         >
-          PolyLava
+          MarketMind
         </h1>
 
         <p className="font-display italic text-xl md:text-2xl text-oracle-amber mt-4 opacity-0 animate-fade-up delay-1">
@@ -272,7 +272,7 @@ export default function LandingPage() {
             </h2>
             <p className="text-oracle-text-dim text-sm leading-relaxed mb-4">
               Most tools rush you. They optimize for speed, for throughput, for
-              the illusion of insight. PolyLava takes a different path.
+              the illusion of insight. MarketMind takes a different path.
             </p>
             <p className="text-oracle-text-dim text-sm leading-relaxed">
               Here, intelligence is not noise — it is signal refined through
@@ -340,7 +340,7 @@ export default function LandingPage() {
       {/* Footer Bar */}
       <footer className="relative z-10 border-t border-oracle-surface-light/30 py-6 text-center">
         <p className="font-mono text-[10px] tracking-[0.3em] text-oracle-text-dim/30">
-          POLYLAVA · PREDICTION MARKET INTELLIGENCE · MMXXVI
+          MARKETMIND · PREDICTION MARKET INTELLIGENCE · MMXXVI
         </p>
       </footer>
     </div>

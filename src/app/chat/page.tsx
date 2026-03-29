@@ -1,22 +1,66 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { ChatMessage, AnthropicMessage, StreamEvent } from "@/types";
 import { ChatPanel } from "@/components/chat/chat-panel";
 import { DashboardPanel } from "@/components/dashboard/dashboard-panel";
 import { OracleSymbol } from "@/components/OracleSymbol";
+import { loadSession, saveSession, clearSession } from "@/lib/chat-cache";
 
 export default function ChatPage() {
   const router = useRouter();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [sessionSeconds, setSessionSeconds] = useState(0);
+  const [hydrated, setHydrated] = useState(false);
+  const sessionSecondsRef = useRef(0);
+
+  // Load cached session on mount
+  useEffect(() => {
+    const cached = loadSession();
+    if (cached) {
+      setMessages(cached.messages);
+      setSessionSeconds(cached.sessionSeconds);
+      sessionSecondsRef.current = cached.sessionSeconds;
+    }
+    setHydrated(true);
+  }, []);
 
   // Session timer
   useEffect(() => {
-    const interval = setInterval(() => setSessionSeconds((s) => s + 1), 1000);
+    const interval = setInterval(() => {
+      setSessionSeconds((s) => {
+        sessionSecondsRef.current = s + 1;
+        return s + 1;
+      });
+    }, 1000);
     return () => clearInterval(interval);
+  }, []);
+
+  // Persist after each completed interaction (not during streaming)
+  useEffect(() => {
+    if (!hydrated || isLoading) return;
+    saveSession(messages, sessionSecondsRef.current);
+  }, [messages, isLoading, hydrated]);
+
+  // Save on unmount / navigation
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      saveSession(messages, sessionSecondsRef.current);
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      handleBeforeUnload();
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [messages]);
+
+  const handleNewSession = useCallback(() => {
+    clearSession();
+    setMessages([]);
+    setSessionSeconds(0);
+    sessionSecondsRef.current = 0;
   }, []);
 
   const formatTime = (seconds: number) => {
@@ -179,52 +223,63 @@ export default function ChatPage() {
   );
 
   return (
-    <main className="flex flex-col h-screen bg-oracle-void">
-      {/* Header */}
-      <header className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-oracle-surface-light/30">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.push("/")}
-            className="text-oracle-text-dim hover:text-oracle-text transition-colors duration-300 text-lg"
-            aria-label="Back to landing"
-          >
-            &larr;
-          </button>
-          <div className="flex items-center gap-2.5">
-            <OracleSymbol size={22} className="text-oracle-gold" />
-            <span className="font-display text-sm tracking-widest text-oracle-text-dim">
-              POLYLAVA
-            </span>
-          </div>
-        </div>
-        <div className="flex items-center gap-6">
-          <div className="flex items-center gap-2">
+    <main className="flex h-screen bg-oracle-void">
+      {/* Sidebar */}
+      <aside className="flex-shrink-0 w-16 flex flex-col items-center py-5 border-r border-oracle-surface-light/30 bg-oracle-deep/40">
+        {/* Logo — links home */}
+        <button
+          onClick={() => router.push("/")}
+          className="mb-8 hover:opacity-100 opacity-70 transition-opacity duration-300"
+          aria-label="Home"
+        >
+          <OracleSymbol size={32} className="text-oracle-gold" />
+        </button>
+
+        {/* New session */}
+        <button
+          onClick={handleNewSession}
+          className="w-9 h-9 flex items-center justify-center rounded-full border border-oracle-surface-light/40 text-oracle-text-dim/50 hover:text-oracle-gold hover:border-oracle-gold-dim/40 transition-all duration-300 mb-6"
+          aria-label="New session"
+          title="New session"
+        >
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </button>
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Session stats */}
+        <div className="flex flex-col items-center gap-3 mb-2">
+          <div className="flex flex-col items-center gap-1">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="font-mono text-[10px] tracking-wider text-oracle-text-dim">
-              SESSION ACTIVE
+            <span className="font-mono text-[8px] tracking-wider text-oracle-text-dim/50 leading-none">
+              LIVE
             </span>
           </div>
-          <span className="font-mono text-[10px] tracking-wider text-oracle-text-dim tabular-nums">
+          <span className="font-mono text-[9px] tracking-wider text-oracle-text-dim/60 tabular-nums">
             {formatTime(sessionSeconds)}
           </span>
-          <span className="font-mono text-[10px] tracking-wider text-oracle-text-dim">
-            {exchangeCount} {exchangeCount === 1 ? "exchange" : "exchanges"}
+          <span className="font-mono text-[9px] text-oracle-text-dim/40">
+            {exchangeCount}
           </span>
         </div>
-      </header>
+      </aside>
 
-      {/* Split view: Chat (55%) + Dashboard (45%) */}
-      <div className="flex flex-1 overflow-hidden">
-        <div className="w-[55%] min-w-0">
-          <ChatPanel
-            messages={messages}
-            isLoading={isLoading}
-            onSubmit={handleSubmit}
-          />
-        </div>
-        <div className="w-[45%] min-w-0">
-          <DashboardPanel messages={messages} />
-        </div>
+      {/* Chat panel — messages scroll, input sticks to bottom */}
+      <div className="flex-1 min-w-0 flex flex-col">
+        <ChatPanel
+          messages={messages}
+          isLoading={isLoading}
+          onSubmit={handleSubmit}
+        />
+      </div>
+
+      {/* Dashboard — independently scrollable */}
+      <div className="w-[400px] flex-shrink-0 min-w-0">
+        <DashboardPanel messages={messages} />
       </div>
     </main>
   );

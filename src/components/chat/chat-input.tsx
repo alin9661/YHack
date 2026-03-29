@@ -83,7 +83,7 @@ export function ChatInput({ onSubmit, disabled }: ChatInputProps) {
             shift + enter for new line
           </span>
           <span className="font-mono text-[9px] text-oracle-text-dim/30 tracking-wider">
-            polylava v1.0
+            marketmind v1.0
           </span>
         </div>
       </form>

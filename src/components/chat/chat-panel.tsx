@@ -32,10 +32,11 @@ export function ChatPanel({ messages, isLoading, onSubmit }: ChatPanelProps) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto px-4">
-        <div className="space-y-4 py-4">
+      {/* Scrollable message area */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-6">
+        <div className="max-w-3xl mx-auto py-6 space-y-4">
           {messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-full min-h-[60vh] px-6">
+            <div className="flex flex-col items-center justify-center min-h-[60vh] px-6">
               <div className="animate-float mb-8">
                 <OracleSymbol size={80} className="text-oracle-gold opacity-60" />
               </div>
@@ -69,7 +70,11 @@ export function ChatPanel({ messages, isLoading, onSubmit }: ChatPanelProps) {
           <div ref={bottomRef} />
         </div>
       </div>
-      <ChatInput onSubmit={onSubmit} disabled={isLoading} />
+
+      {/* Sticky input — always at bottom */}
+      <div className="flex-shrink-0">
+        <ChatInput onSubmit={onSubmit} disabled={isLoading} />
+      </div>
     </div>
   );
 }
