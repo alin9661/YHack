@@ -1,65 +1,197 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useCallback } from "react";
+import type { ChatMessage, AnthropicMessage, StreamEvent } from "@/types";
+import { ChatPanel } from "@/components/chat/chat-panel";
+import { DashboardPanel } from "@/components/dashboard/dashboard-panel";
 
 export default function Home() {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = useCallback(
+    async (text: string) => {
+      if (isLoading) return;
+
+      const userMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: "user",
+        content: text,
+      };
+
+      const assistantId = crypto.randomUUID();
+
+      setMessages((prev) => [
+        ...prev,
+        userMessage,
+        { id: assistantId, role: "assistant", content: "", toolCalls: [] },
+      ]);
+      setIsLoading(true);
+
+      try {
+        // Build Anthropic messages from history (exclude the placeholder)
+        const anthropicMessages: AnthropicMessage[] = [
+          ...messages,
+          userMessage,
+        ].map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        }));
+
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: anthropicMessages }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Request failed: ${response.status}`);
+        }
+
+        const reader = response.body!.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const jsonStr = line.slice(6).trim();
+            if (!jsonStr) continue;
+
+            try {
+              const event: StreamEvent = JSON.parse(jsonStr);
+
+              switch (event.type) {
+                case "text":
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      msg.id === assistantId
+                        ? { ...msg, content: msg.content + event.content }
+                        : msg
+                    )
+                  );
+                  break;
+
+                case "tool_call":
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      msg.id === assistantId
+                        ? {
+                            ...msg,
+                            toolCalls: [
+                              ...(msg.toolCalls || []),
+                              {
+                                name: event.name,
+                                input: event.input,
+                                status: "pending" as const,
+                              },
+                            ],
+                          }
+                        : msg
+                    )
+                  );
+                  break;
+
+                case "tool_result":
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      msg.id === assistantId
+                        ? {
+                            ...msg,
+                            toolCalls: (msg.toolCalls || []).map((tc) =>
+                              tc.name === event.name &&
+                              tc.status === "pending"
+                                ? {
+                                    ...tc,
+                                    result: event.result,
+                                    status: "complete" as const,
+                                  }
+                                : tc
+                            ),
+                          }
+                        : msg
+                    )
+                  );
+                  break;
+
+                case "error":
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      msg.id === assistantId
+                        ? {
+                            ...msg,
+                            content:
+                              msg.content +
+                              `\n\n⚠️ Error: ${event.message}`,
+                          }
+                        : msg
+                    )
+                  );
+                  break;
+              }
+            } catch {
+              // Skip malformed events
+            }
+          }
+        }
+      } catch (error) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === assistantId
+              ? {
+                  ...msg,
+                  content: `Error: ${error instanceof Error ? error.message : "Something went wrong"}`,
+                }
+              : msg
+          )
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [messages, isLoading]
+  );
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="flex flex-col h-screen">
+      {/* Header */}
+      <header className="flex items-center justify-between px-6 py-3 border-b border-zinc-800 bg-zinc-950">
+        <div>
+          <h1 className="text-base font-semibold font-[family-name:var(--font-geist-sans)] text-zinc-100">
+            Lava Gateway
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-[11px] text-zinc-500">
+            Prediction Market Intelligence
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-400" />
+          <span className="text-[11px] text-zinc-500 font-mono">
+            Claude via Lava
+          </span>
         </div>
-      </main>
-    </div>
+      </header>
+
+      {/* Split view: Chat (55%) + Dashboard (45%) */}
+      <div className="flex flex-1 overflow-hidden">
+        <div className="w-[55%] min-w-0">
+          <ChatPanel
+            messages={messages}
+            isLoading={isLoading}
+            onSubmit={handleSubmit}
+          />
+        </div>
+        <div className="w-[45%] min-w-0">
+          <DashboardPanel messages={messages} />
+        </div>
+      </div>
+    </main>
   );
 }
