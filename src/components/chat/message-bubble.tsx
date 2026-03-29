@@ -60,7 +60,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-3 mb-2">
             <span className="font-mono text-[10px] tracking-wider text-oracle-text-dim uppercase">
-              {isUser ? "You" : "PolyLava"}
+              {isUser ? "You" : "MarketMind"}
             </span>
           </div>
 

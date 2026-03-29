@@ -25,7 +25,7 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PolyLava — Prediction Market Intelligence",
+  title: "MarketMind — Prediction Market Intelligence",
   description: "AI-powered prediction market analysis with Polymarket data and custom signals",
   icons: {
     icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='none' stroke='%23D4A84B' stroke-width='2'/><ellipse cx='50' cy='50' rx='15' ry='8' fill='none' stroke='%23D4A84B' stroke-width='2'/><circle cx='50' cy='50' r='3' fill='%23D4A84B'/></svg>",
